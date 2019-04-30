@@ -31,9 +31,8 @@ entries = root_element[0]
 # from ftp://ftp.ncbi.nih.gov/pub/HomoloGene/build68/build_inputs/taxid_taxname
 S1_taxid = args.tax_ids[0]
 S2_taxid = args.tax_ids[1]
-
 n_pairs = 0
-
+err = 0
 with open(args.output, 'w') as of:
 
     # each entry is one group of homologous genes
@@ -76,7 +75,6 @@ with open(args.output, 'w') as of:
                 S1_genes.append(gene)
             elif taxid == S2_taxid:
                 S2_genes.append(gene)
-
         if (S1_genes and S2_genes):
 
             # create a structure that allows us to quickly look up stats for a gene
@@ -84,22 +82,24 @@ with open(args.output, 'w') as of:
             stats_array = {frozenset([stat.find('HG-Stats_gi1').text, 
                             stat.find('HG-Stats_gi2').text]): stat for stat in stats}
 
-            for Sp, Sc in itertools.product(S1_genes, S2_genes):
+            for S1, S2 in itertools.product(S1_genes, S2_genes):
+                
+                gene_ids = frozenset([S1.find('HG-Gene_prot-gi').text,
+                                              S2.find('HG-Gene_prot-gi').text])
+                stat = stats_array.get(gene_ids)
 
-                stat = stats_array[frozenset([Sc.find('HG-Gene_prot-gi').text,
-                                              Sp.find('HG-Gene_prot-gi').text])]
-
-
-                if stat.find('HG-Stats_recip-best').attrib['value'] == 'true':
-                    if args.use_refseq_id:
-                        of.write('{}\t{}\n'.format(                    
-                        Sc.find('HG-Gene_prot-acc').text,
-                        Sp.find('HG-Gene_prot-acc').text))
-                    else:
-                        of.write('{}\t{}\n'.format(                    
-                        Sc.find('HG-Gene_locus-tag').text,
-                        Sp.find('HG-Gene_locus-tag').text))
-                    n_pairs += 1
+                if stat is not None:
+                    if stat.find('HG-Stats_recip-best').attrib['value'] == 'true':
+                        if args.use_refseq_id:
+                            of.write('{}\t{}\n'.format(
+                            S1.find('HG-Gene_prot-acc').text,
+                            S2.find('HG-Gene_prot-acc').text))
+                            n_pairs += 1
+                        else:
+                            of.write('{}\t{}\n'.format(                    
+                            S1.find('HG-Gene_locus-tag').text,
+                            S2.find('HG-Gene_locus-tag').text))
+                            n_pairs += 1
 
                 # stats object:
                 # Contains different pairwise statistics between the proteins in a
