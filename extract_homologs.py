@@ -16,7 +16,7 @@ parser.add_argument('--use_refseq_id', action='store_true')
 args = parser.parse_args()
 assert len(args.tax_ids) == 2
 
-# takes 3-4 mins and needs lots of memory
+# Needs lots of memory if XML is big
 with open(args.input, 'r') as fp:
     tree = ET.parse(fp)
 root_element = tree.getroot()
